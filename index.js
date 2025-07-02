@@ -4,6 +4,8 @@ import dbConnect from "./db.js";
 import morgan from "morgan";
 import cors from "cors";
 import bodyParser from "body-parser";
+import { Admin } from "./helpers/helperFunction.js";
+import authRouter from "./routes/authRouter/authRouter.js";
 
 const app = express();
 const port = config.PORT;
@@ -45,9 +47,13 @@ app.use((req, res, err, next) => {
   res.status(500).json({ error: "Internal server error" });
 });
 
+//routes
+app.use("/api/auth", authRouter);
+
 //database
 dbConnect()
   .then(() => {
+    Admin();
     app.listen(port, () => {
       console.log(`server is listening at ${port}`);
     });
