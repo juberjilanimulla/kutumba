@@ -52,7 +52,7 @@ app.use((req, res, err, next) => {
 
 //routes
 app.use("/api/auth", authRouter);
-app.use("/api/admin", isAdminMiddleware, adminRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api/user", userRouter);
 
 //database

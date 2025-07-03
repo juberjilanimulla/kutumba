@@ -6,15 +6,16 @@ import {
 import blogmodel from "../../models/blogmodel.js";
 
 const adminblogRouter = Router();
-adminblogRouter.post("/", getaallblogHandler);
+adminblogRouter.post("/", getallblogHandler);
 adminblogRouter.post("/create", createblogHandler);
 adminblogRouter.put("/update", updateblogHandler);
 adminblogRouter.delete("/delete", deleteblogHandler);
 adminblogRouter.post("/published", publishedapprovalHandler);
+adminblogRouter.delete("/deleteimage", deletecoverimageHandler);
 
 export default adminblogRouter;
 
-async function getaallblogHandler(req, res) {
+async function getallblogHandler(req, res) {
   try {
     const { pageno = 0, filterBy = {}, sortby = {}, search = "" } = req.body;
     const limit = 10;
@@ -189,5 +190,13 @@ async function publishedapprovalHandler(req, res) {
   } catch (error) {
     console.error("Error updating blog:", error);
     return errorResponse(res, 500, "Internal server error");
+  }
+}
+
+async function deletecoverimageHandler(req, res) {
+  try {
+  } catch (error) {
+    console.log("error", error);
+    errorResponse(res, 500, "internal server error");
   }
 }

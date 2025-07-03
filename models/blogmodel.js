@@ -30,13 +30,13 @@ const blogSchema = new Schema(
       default: false,
     },
   },
-  { timestamps: trusted, versionKey: false }
+  { timestamps: true, versionKey: false }
 );
 
 function currentLocalTimePlusOffset() {
   const now = new Date();
   const offset = 5.5 * 60 * 60 * 1000;
-  return new Date(now.getDate + offset);
+  return new Date(now.getTime() + offset);
 }
 
 blogSchema.pre("save", function (next) {
