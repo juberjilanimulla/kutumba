@@ -4,6 +4,7 @@ import {
   successResponse,
 } from "../../helpers/serverResponse.js";
 import blogmodel from "../../models/blogmodel.js";
+import adminblogimageRouter from "./adminuploadblogimageRouter.js";
 
 const adminblogRouter = Router();
 adminblogRouter.post("/", getallblogHandler);
@@ -12,6 +13,7 @@ adminblogRouter.put("/update", updateblogHandler);
 adminblogRouter.delete("/delete", deleteblogHandler);
 adminblogRouter.post("/published", publishedapprovalHandler);
 adminblogRouter.delete("/deleteimage", deletecoverimageHandler);
+adminblogRouter.use("/uploadimage", adminblogimageRouter);
 
 export default adminblogRouter;
 
@@ -120,35 +122,36 @@ async function deleteblogHandler(req, res) {
   try {
     const { _id } = req.body;
     if (!_id) {
-      return errorResponse(res, 400, "some params are missing");
+      return errorResponse(res, 400, "blog ID (_id) is required");
     }
+
+    // Find blog before deletion (to access images)
     const blog = await blogmodel.findById(_id);
     if (!blog) {
-      return errorResponse(res, 404, "blog id not found");
-    } // Extract public_id from Cloudinary URL
-    const imageUrl = blog.coverimage;
-    let publicId = null;
-
-    if (imageUrl) {
-      const match = imageUrl.match(/\/v\d+\/(.+?)\.(jpg|jpeg|png|gif|webp)/);
-      if (match) {
-        publicId = match[1];
-      }
+      return errorResponse(res, 404, "blog not found");
     }
 
-    // Delete blog from DB
-    await blogsmodel.findByIdAndDelete(_id);
+    // Delete all images from S3
+    const deleteObjects = blog.coverimage.map((url) => ({
+      Key: url.split(".amazonaws.com/")[1],
+    }));
 
-    // Delete image from Cloudinary
-    if (publicId) {
-      try {
-        await cloudinary.uploader.destroy(publicId);
-        console.log("Cloudinary image deleted:", publicId);
-      } catch (cloudErr) {
-        // console.log("Cloudinary image deletion failed:", cloudErr.message);
-      }
+    if (deleteObjects.length > 0) {
+      await s3
+        .deleteObjects({
+          Bucket: process.env.AWS_S3_BUCKET,
+          Delete: {
+            Objects: deleteObjects,
+            Quiet: true,
+          },
+        })
+        .promise();
     }
-    successResponse(res, "successfully deleted");
+
+    // Delete property from DB
+    await blogmodel.findByIdAndDelete(_id);
+
+    return successResponse(res, "blog and associated images deleted");
   } catch (error) {
     console.log("error", error);
     errorResponse(res, 500, "internal server error ");
@@ -194,7 +197,33 @@ async function publishedapprovalHandler(req, res) {
 }
 
 async function deletecoverimageHandler(req, res) {
+  const { imageurl, blogid } = req.body;
+  if (!imageurl || !blogid) {
+    return errorResponse(res, 400, "some params are missing");
+  }
+  const s3Key = imageurl.split(".amazonaws.com/")[1];
+  if (!s3Key) {
+    return errorResponse(res, 400, "invalid s3 url");
+  }
   try {
+    await s3
+      .deleteObject({ Bucket: process.env.AWS_S3_BUCKET, Key: s3Key })
+      .promise();
+    // 2. Remove from DB
+    const blog = await blogmodel.findById(blogid);
+    if (!blog) return errorResponse(res, 404, "blog not found");
+
+    blog.coverimage = blog.coverimage.filter(
+      (url) =>
+        decodeURIComponent(url.trim()) !== decodeURIComponent(imageurl.trim())
+    );
+
+    await blog.save();
+
+    // 3. Refetch updated document to be 100% fresh
+    const updated = await blogmodel.findById(blogid);
+
+    return successResponse(res, "Image deleted successfully", updated);
   } catch (error) {
     console.log("error", error);
     errorResponse(res, 500, "internal server error");
