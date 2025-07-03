@@ -45,6 +45,7 @@ app.use((req, res, err, next) => {
 app.use((req, res, err, next) => {
   console.log(err);
   res.status(500).json({ error: "Internal server error" });
+  next();
 });
 
 //routes
