@@ -4,8 +4,10 @@ import dbConnect from "./db.js";
 import morgan from "morgan";
 import cors from "cors";
 import bodyParser from "body-parser";
-import { Admin } from "./helpers/helperFunction.js";
+import { Admin, isAdminMiddleware } from "./helpers/helperFunction.js";
 import authRouter from "./routes/authRouter/authRouter.js";
+import adminRouter from "./routes/adminRouter/adminRouter.js";
+import userRouter from "./routes/userRouter/userRouter.js";
 
 const app = express();
 const port = config.PORT;
@@ -50,6 +52,8 @@ app.use((req, res, err, next) => {
 
 //routes
 app.use("/api/auth", authRouter);
+app.use("/api/admin", isAdminMiddleware, adminRouter);
+app.use("/api/user", userRouter);
 
 //database
 dbConnect()
