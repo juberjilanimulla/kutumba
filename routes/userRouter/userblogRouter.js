@@ -12,7 +12,7 @@ export default userblogRouter;
 
 async function getallblogHandler(req, res) {
   try {
-    const blog = await blogmodel.find();
+    const blog = await blogmodel.find({ published: true });
     successResponse(res, "success", blog);
   } catch (error) {
     console.log("error", error);

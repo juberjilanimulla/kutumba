@@ -5,8 +5,12 @@ import {
 } from "../../helpers/serverResponse.js";
 import blogmodel from "../../models/blogmodel.js";
 import adminblogimageRouter from "./adminuploadblogimageRouter.js";
+import AWS from "aws-sdk";
+
+const s3 = new AWS.S3();
 
 const adminblogRouter = Router();
+
 adminblogRouter.post("/", getallblogHandler);
 adminblogRouter.post("/create", createblogHandler);
 adminblogRouter.put("/update", updateblogHandler);
@@ -125,33 +129,32 @@ async function deleteblogHandler(req, res) {
       return errorResponse(res, 400, "blog ID (_id) is required");
     }
 
-    // Find blog before deletion (to access images)
+    // Find blog before deletion
     const blog = await blogmodel.findById(_id);
     if (!blog) {
       return errorResponse(res, 404, "blog not found");
     }
 
-    // Delete all images from S3
-    const deleteObjects = blog.coverimage.map((url) => ({
-      Key: url.split(".amazonaws.com/")[1],
-    }));
-
-    if (deleteObjects.length > 0) {
-      await s3
-        .deleteObjects({
-          Bucket: process.env.AWS_S3_BUCKET,
-          Delete: {
-            Objects: deleteObjects,
-            Quiet: true,
-          },
-        })
-        .promise();
+    // Delete the single image from S3 if present
+    if (blog.coverimage) {
+      const s3Key = blog.coverimage.split(".amazonaws.com/")[1];
+      if (s3Key) {
+        await s3
+          .deleteObject({
+            Bucket: process.env.AWS_S3_BUCKET,
+            Key: s3Key,
+          })
+          .promise();
+      }
     }
 
-    // Delete property from DB
+    // Delete the blog from MongoDB
     await blogmodel.findByIdAndDelete(_id);
 
-    return successResponse(res, "blog and associated images deleted");
+    return successResponse(
+      res,
+      "Blog and its cover image deleted successfully"
+    );
   } catch (error) {
     console.log("error", error);
     errorResponse(res, 500, "internal server error ");
@@ -160,18 +163,13 @@ async function deleteblogHandler(req, res) {
 
 async function publishedapprovalHandler(req, res) {
   try {
-    const { publishedid } = req.query;
-    const { published } = req.body;
-
-    if (!publishedid) {
-      return errorResponse(res, 400, "Blog ID is missing in URL params");
-    }
+    const { publishedid, published } = req.body;
 
     if (typeof published !== "boolean") {
       return errorResponse(
         res,
         400,
-        "Published must be a boolean (true/false)"
+        "published must be a boolean (true/false)"
       );
     }
 
@@ -213,14 +211,16 @@ async function deletecoverimageHandler(req, res) {
     const blog = await blogmodel.findById(blogid);
     if (!blog) return errorResponse(res, 404, "blog not found");
 
-    blog.coverimage = blog.coverimage.filter(
-      (url) =>
-        decodeURIComponent(url.trim()) !== decodeURIComponent(imageurl.trim())
-    );
+    if (
+      decodeURIComponent(blog.coverimage.trim()) ===
+      decodeURIComponent(imageurl.trim())
+    ) {
+      blog.coverimage = ""; // or null
+    }
 
     await blog.save();
 
-    // 3. Refetch updated document to be 100% fresh
+    // 3. Refetch updated document
     const updated = await blogmodel.findById(blogid);
 
     return successResponse(res, "Image deleted successfully", updated);
