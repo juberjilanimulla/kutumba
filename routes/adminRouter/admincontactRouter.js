@@ -8,11 +8,12 @@ import contactmodel from "../../models/contactmodel.js";
 const admincontactRouter = Router();
 admincontactRouter.get("/", getallcontactRouter);
 admincontactRouter.delete("/delete", deletecontactRouter);
+
 export default admincontactRouter;
 
 async function getallcontactRouter(req, res) {
   try {
-    const contact = await contactmodel.find({ createdAt: -1 });
+    const contact = await contactmodel.find().sort({ createdAt: -1 });
     successResponse(res, "success", contact);
   } catch (error) {
     console.log("error", error);

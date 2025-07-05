@@ -8,7 +8,7 @@ const contactSchema = new Schema(
     mobile: String,
     description: String,
   },
-  { timeseries: true, versionKey: false }
+  { timestamps: true, versionKey: false }
 );
 
 function currentLocalTimePlusOffset() {
