@@ -1,20 +1,14 @@
 import { Schema, model } from "mongoose";
 
-const userSchema = new Schema(
+const contactSchema = new Schema(
   {
     firstname: String,
     lastname: String,
-    mobile: String,
     email: String,
-    password: String,
+    mobile: String,
     description: String,
-    role: {
-      type: String,
-      enum: ["admin", "user"],
-      default: "user",
-    },
   },
-  { timestamps: true, versionKey: false }
+  { timeseries: true, versionKey: false }
 );
 
 function currentLocalTimePlusOffset() {
@@ -23,18 +17,18 @@ function currentLocalTimePlusOffset() {
   return new Date(now.getTime() + offset);
 }
 
-userSchema.pre("save", function (next) {
+contactSchema.pre("save", function (next) {
   const currentTime = currentLocalTimePlusOffset();
   this.createdAt = currentTime;
   this.updatedAt = currentTime;
   next();
 });
 
-userSchema.pre("findOneAndUpdate", function (next) {
+contactSchema.pre("findOneAndUpdate", function (next) {
   const currentTime = currentLocalTimePlusOffset();
   this.set({ updatedAt: currentTime });
   next();
 });
 
-const usermodel = model("user", userSchema);
-export default usermodel;
+const contactmodel = model("contact", contactSchema);
+export default contactmodel;
