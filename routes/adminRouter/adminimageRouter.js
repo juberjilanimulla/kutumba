@@ -5,6 +5,9 @@ import {
 } from "../../helpers/serverResponse.js";
 import imagemodel from "../../models/imagemodel.js";
 import admingalleryimageRouter from "./adminuploadimageRouter.js";
+import AWS from "aws-sdk";
+
+const s3 = new AWS.S3();
 
 const adminimageRouter = Router();
 
@@ -26,36 +29,42 @@ async function getallimageHandler(req, res) {
 
 async function deletegalleryimageHandler(req, res) {
   const { imageurl, galleryid } = req.body;
+
   if (!imageurl || !galleryid) {
-    return errorResponse(res, 400, "some params are missing");
+    return errorResponse(res, 400, "Missing image URL or gallery ID");
   }
+
   const s3Key = imageurl.split(".amazonaws.com/")[1];
+  console.log("s3Key", s3Key);
   if (!s3Key) {
-    return errorResponse(res, 400, "invalid s3 url");
+    return errorResponse(res, 400, "Invalid S3 URL");
   }
+
   try {
+    // 1. Delete image from S3
     await s3
-      .deleteObject({ Bucket: process.env.AWS_S3_BUCKET, Key: s3Key })
+      .deleteObject({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: s3Key,
+      })
       .promise();
-    // 2. Remove from DB
+
+    // 2. Remove the image from the images array in the document
     const gallery = await imagemodel.findById(galleryid);
-    if (!gallery) return errorResponse(res, 404, "gallery not found");
+    if (!gallery) return errorResponse(res, 404, "Gallery not found");
 
-    if (
-      decodeURIComponent(gallery.url.trim()) ===
-      decodeURIComponent(imageurl.trim())
-    ) {
-      gallery.url = ""; // or null
-    }
+    const filteredImages = gallery.images.filter(
+      (img) =>
+        decodeURIComponent(img.url.trim()) !==
+        decodeURIComponent(imageurl.trim())
+    );
 
+    gallery.images = filteredImages;
     await gallery.save();
 
-    // 3. Refetch updated document
-    const updated = await imagemodel.findById(galleryid);
-
-    return successResponse(res, "Image deleted successfully", updated);
+    return successResponse(res, "Image deleted successfully");
   } catch (error) {
-    console.log("error", error);
-    errorResponse(res, 500, "internal server error");
+    console.error("Image deletion failed:", error.message);
+    return errorResponse(res, 500, "Internal server error");
   }
 }
