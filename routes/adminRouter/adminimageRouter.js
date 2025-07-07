@@ -35,13 +35,27 @@ async function deletegalleryimageHandler(req, res) {
   }
 
   const s3Key = imageurl.split(".amazonaws.com/")[1];
-  console.log("s3Key", s3Key);
   if (!s3Key) {
     return errorResponse(res, 400, "Invalid S3 URL");
   }
 
   try {
-    // 1. Delete image from S3
+    // 1. Fetch the gallery document
+    const gallery = await imagemodel.findById(galleryid);
+    if (!gallery) return errorResponse(res, 404, "Gallery not found");
+
+    // 2. Check if imageurl exists in gallery.images
+    const imageExists = gallery.images.some(
+      (img) =>
+        decodeURIComponent(img.url.trim()) ===
+        decodeURIComponent(imageurl.trim())
+    );
+
+    if (!imageExists) {
+      return errorResponse(res, 404, "Image URL not found in gallery");
+    }
+
+    // 3. Delete image from S3
     await s3
       .deleteObject({
         Bucket: process.env.AWS_S3_BUCKET,
@@ -49,22 +63,19 @@ async function deletegalleryimageHandler(req, res) {
       })
       .promise();
 
-    // 2. Remove the image from the images array in the document
-    const gallery = await imagemodel.findById(galleryid);
-    if (!gallery) return errorResponse(res, 404, "Gallery not found");
-
-    const filteredImages = gallery.images.filter(
+    // 4. Remove image from DB
+    gallery.images = gallery.images.filter(
       (img) =>
         decodeURIComponent(img.url.trim()) !==
         decodeURIComponent(imageurl.trim())
     );
 
-    gallery.images = filteredImages;
     await gallery.save();
 
-    return successResponse(res, "Image deleted successfully");
+    return successResponse(res, "Image deleted successfully", gallery);
   } catch (error) {
     console.error("Image deletion failed:", error.message);
     return errorResponse(res, 500, "Internal server error");
   }
 }
+
