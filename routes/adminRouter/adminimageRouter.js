@@ -13,7 +13,8 @@ const adminimageRouter = Router();
 
 adminimageRouter.get("/", getallimageHandler);
 adminimageRouter.use("/", admingalleryimageRouter);
-adminimageRouter.delete("/delete", deletegalleryimageHandler);
+adminimageRouter.delete("/imagedelete", deletegalleryimageHandler);
+adminimageRouter.delete("/delete", deletegalleryHandler);
 
 export default adminimageRouter;
 
@@ -72,10 +73,48 @@ async function deletegalleryimageHandler(req, res) {
 
     await gallery.save();
 
-    return successResponse(res, "Image deleted successfully", gallery);
+    return successResponse(res, "Image deleted successfully");
   } catch (error) {
     console.error("Image deletion failed:", error.message);
     return errorResponse(res, 500, "Internal server error");
   }
 }
 
+async function deletegalleryHandler(req, res) {
+  try {
+    const { _id } = req.body;
+
+    if (!_id) {
+      return errorResponse(res, 400, "gallery ID (_id) is required");
+    }
+
+    // 1. Find the gallery document
+    const gallery = await imagemodel.findById(_id);
+    if (!gallery) {
+      return errorResponse(res, 404, "Gallery not found");
+    }
+
+    // 2. Delete all associated images from S3
+    if (Array.isArray(gallery.images) && gallery.images.length > 0) {
+      for (const img of gallery.images) {
+        const s3Key = img.url.split(".amazonaws.com/")[1];
+        if (s3Key) {
+          await s3
+            .deleteObject({
+              Bucket: process.env.AWS_S3_BUCKET,
+              Key: s3Key,
+            })
+            .promise();
+        }
+      }
+    }
+
+    // 3. Delete the gallery document from MongoDB
+    await imagemodel.findByIdAndDelete(_id);
+
+    return successResponse(res, "Gallery and its images deleted successfully");
+  } catch (error) {
+    console.error("Gallery delete error:", error.message);
+    return errorResponse(res, 500, "Internal server error");
+  }
+}
