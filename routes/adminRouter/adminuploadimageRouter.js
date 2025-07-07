@@ -16,14 +16,14 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// AWS S3 Setup
+// AWS S3 setup
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION,
 });
 
-// Multer Setup
+// Multer setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = path.join(__dirname, "../../temp");
@@ -43,50 +43,61 @@ const upload = multer({
     if (isImage) cb(null, true);
     else cb(new Error("Only image files are allowed"));
   },
-}).single("images");
+}).array("images", 10); // up to 10 images per upload
 
 const admingalleryimageRouter = Router();
 
-admingalleryimageRouter.post("/:id", (req, res) => {
+admingalleryimageRouter.post("/create", (req, res) => {
   upload(req, res, async (err) => {
     if (err) return errorResponse(res, 400, err.message || "Upload error");
-    if (!req.file) return errorResponse(res, 400, "No file uploaded");
+    if (!req.files || req.files.length === 0)
+      return errorResponse(res, 400, "No files uploaded");
 
     try {
-      const gallery = await imagemodel.findById(req.params.id);
-      if (!gallery) {
-        fs.unlinkSync(req.file.path);
-        return errorResponse(res, 404, "gallery not found");
+      // Read all uploaded files and upload them to S3
+      const uploadedImages = [];
+
+      for (const file of req.files) {
+        const fileContent = fs.readFileSync(file.path);
+        const fileName = `${Date.now()}-${file.originalname}`;
+        const s3Key = `gallery/${fileName}`;
+
+        const s3Res = await s3
+          .upload({
+            Bucket: process.env.AWS_S3_BUCKET,
+            Key: s3Key,
+            Body: fileContent,
+            ContentType: file.mimetype,
+          })
+          .promise();
+
+        uploadedImages.push({
+          url: s3Res.Location,
+          uploadedAt: new Date(),
+        });
+
+        fs.unlinkSync(file.path);
       }
 
-      const fileContent = fs.readFileSync(req.file.path);
-      const fileName = `${req.params.id}-${Date.now()}${path.extname(
-        req.file.originalname
-      )}`;
-      const s3Key = `gallery/${fileName}`;
+      // Check if image document exists
+      let gallery = await imagemodel.findOne();
 
-      const s3Res = await s3
-        .upload({
-          Bucket: process.env.AWS_S3_BUCKET,
-          Key: s3Key,
-          Body: fileContent,
-          ContentType: req.file.mimetype,
-        })
-        .promise();
+      if (!gallery) {
+        // Create new document if it doesn't exist
+        gallery = new imagemodel({ images: uploadedImages });
+      } else {
+        // Push new images to existing document
+        gallery.images.push(...uploadedImages);
+      }
 
-      // If blog.coverimage is an array
-      //   blog.coverimage.push(s3Res.Location);
-
-      // If blog.coverimage is a single string
-      gallery.url = s3Res.Location;
-
-      fs.unlinkSync(req.file.path);
       await gallery.save();
 
-      return successResponse(res, "Image uploaded successfully", gallery);
+      return successResponse(res, "Images uploaded successfully", gallery);
     } catch (error) {
       console.error("Upload failed:", error.message);
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      req.files?.forEach((file) => {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      });
       return errorResponse(res, 500, "Image upload failed");
     }
   });

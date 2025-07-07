@@ -2,10 +2,11 @@ import { Schema, model } from "mongoose";
 
 const imageSchema = new Schema(
   {
-    url: {
-      type: String,
-      required: true,
-    },
+    images: [
+      {
+        url: { type: String, required: true },
+      },
+    ],
   },
   { timestamps: true, versionKey: false }
 );
