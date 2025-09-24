@@ -33,7 +33,6 @@ async function deletecommentHandler(req, res) {
     if (!_id) {
       return errorResponse(res, 400, "some params are missing");
     }
-
     const comment = await commentmodel.findByIdAndDelete({ _id: _id });
     if (!comment) {
       return errorResponse(res, 404, "comment id not found ");
