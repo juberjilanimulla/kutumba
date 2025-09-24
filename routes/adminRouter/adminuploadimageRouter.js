@@ -48,7 +48,6 @@ const upload = multer({
 }).array("images", 10); // up to 10 images per upload
 
 const admingalleryimageRouter = Router();
-
 admingalleryimageRouter.post("/create", (req, res) => {
   upload(req, res, async (err) => {
     if (err) return errorResponse(res, 400, err.message || "Upload error");
@@ -56,39 +55,38 @@ admingalleryimageRouter.post("/create", (req, res) => {
       return errorResponse(res, 400, "No files uploaded");
 
     try {
-      // Read all uploaded files and upload them to S3
       const uploadedImages = [];
 
       for (const file of req.files) {
-        const fileContent = fs.readFileSync(file.path);
+        const fileStream = createReadStream(file.path);
         const fileName = `${Date.now()}-${file.originalname}`;
         const s3Key = `gallery/${fileName}`;
 
-        const s3Res = await s3
-          .upload({
-            Bucket: process.env.AWS_S3_BUCKET,
-            Key: s3Key,
-            Body: fileContent,
-            ContentType: file.mimetype,
-          })
-          .promise();
+        const command = new PutObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME, // <-- make sure this is correct
+          Key: s3Key,
+          Body: fileStream,
+          ContentType: file.mimetype,
+        });
+
+        await s3.send(command);
+
+        const imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
 
         uploadedImages.push({
-          url: s3Res.Location,
+          url: imageUrl,
           uploadedAt: new Date(),
         });
 
-        fs.unlinkSync(file.path);
+        fs.unlinkSync(file.path); // cleanup local file
       }
 
-      // Check if image document exists
+      // Check if gallery already exists
       let gallery = await imagemodel.findOne();
 
       if (!gallery) {
-        // Create new document if it doesn't exist
         gallery = new imagemodel({ images: uploadedImages });
       } else {
-        // Push new images to existing document
         gallery.images.push(...uploadedImages);
       }
 
