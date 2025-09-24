@@ -2,7 +2,7 @@ import { Schema, model } from "mongoose";
 
 const clientSchema = new Schema(
   {
-    fullname: String,
+    name: String,
     location: String,
     phone: {
       type: String,
