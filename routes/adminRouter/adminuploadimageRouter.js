@@ -1,11 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
-import AWS from "aws-sdk";
-import fs from "fs";
+import fs, { createReadStream } from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
   successResponse,
   errorResponse,
@@ -17,10 +17,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // AWS S3 setup
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+const s3 = new S3Client({
   region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 // Multer setup
