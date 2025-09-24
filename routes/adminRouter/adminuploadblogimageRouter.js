@@ -1,11 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
-import AWS from "aws-sdk";
-import fs from "fs";
+import fs, { createReadStream } from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
   successResponse,
   errorResponse,
@@ -17,10 +17,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // AWS S3 Setup
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+const s3 = new S3Client({
   region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 // Multer Setup
@@ -53,35 +55,64 @@ adminblogimageRouter.post("/:id", (req, res) => {
     if (!req.file) return errorResponse(res, 400, "No file uploaded");
 
     try {
+      // const blog = await blogmodel.findById(req.params.id);
+      // if (!blog) {
+      //   fs.unlinkSync(req.file.path);
+      //   return errorResponse(res, 404, "Blog not found");
+      // }
+      //
+      // const fileContent = fs.readFileSync(req.file.path);
+      // const fileName = `${req.params.id}-${Date.now()}${path.extname(
+      //   req.file.originalname
+      // )}`;
+      // const s3Key = `blog/${fileName}`;
+
+      // const s3Res = await s3
+      //   .upload({
+      //     Bucket: process.env.AWS_S3_BUCKET,
+      //     Key: s3Key,
+      //     Body: fileContent,
+      //     ContentType: req.file.mimetype,
+      //   })
+      //   .promise();
+
+      // // If blog.coverimage is an array
+      // //   blog.coverimage.push(s3Res.Location);
+
+      // // If blog.coverimage is a single string
+      // blog.coverimage = s3Res.Location;
+
+      // fs.unlinkSync(req.file.path);
+      // await blog.save();
+
+      // return successResponse(res, "Image uploaded successfully", blog);
+
       const blog = await blogmodel.findById(req.params.id);
       if (!blog) {
         fs.unlinkSync(req.file.path);
         return errorResponse(res, 404, "Blog not found");
       }
 
-      const fileContent = fs.readFileSync(req.file.path);
+      const fileStream = createReadStream(req.file.path);
       const fileName = `${req.params.id}-${Date.now()}${path.extname(
         req.file.originalname
       )}`;
-      const s3Key = `blog/${fileName}`;
+      const s3Key = `blogimages/${fileName}`;
 
-      const s3Res = await s3
-        .upload({
-          Bucket: process.env.AWS_S3_BUCKET,
-          Key: s3Key,
-          Body: fileContent,
-          ContentType: req.file.mimetype,
-        })
-        .promise();
+      const uploadCommand = new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: s3Key,
+        Body: fileStream,
+        ContentType: req.file.mimetype,
+      });
 
-      // If blog.coverimage is an array
-      //   blog.coverimage.push(s3Res.Location);
+      await s3.send(uploadCommand);
 
-      // If blog.coverimage is a single string
-      blog.coverimage = s3Res.Location;
+      const imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+      blog.coverimage = imageUrl;
 
-      fs.unlinkSync(req.file.path);
       await blog.save();
+      fs.unlinkSync(req.file.path); // Remove local temp file
 
       return successResponse(res, "Image uploaded successfully", blog);
     } catch (error) {

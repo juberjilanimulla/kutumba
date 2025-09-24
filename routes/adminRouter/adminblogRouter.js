@@ -5,9 +5,15 @@ import {
 } from "../../helpers/serverResponse.js";
 import blogmodel from "../../models/blogmodel.js";
 import adminblogimageRouter from "./adminuploadblogimageRouter.js";
-import AWS from "aws-sdk";
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
-const s3 = new AWS.S3();
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 const adminblogRouter = Router();
 
@@ -129,32 +135,28 @@ async function deleteblogHandler(req, res) {
       return errorResponse(res, 400, "blog ID (_id) is required");
     }
 
-    // Find blog before deletion
+    // Find property before deletion (to access images)
     const blog = await blogmodel.findById(_id);
     if (!blog) {
       return errorResponse(res, 404, "blog not found");
     }
 
-    // Delete the single image from S3 if present
-    if (blog.coverimage) {
-      const s3Key = blog.coverimage.split(".amazonaws.com/")[1];
-      if (s3Key) {
-        await s3
-          .deleteObject({
-            Bucket: process.env.AWS_S3_BUCKET,
-            Key: s3Key,
-          })
-          .promise();
-      }
+    // Delete all images from S3
+    const s3Key = blog.coverimage?.split(".amazonaws.com/")[1];
+
+    if (s3Key) {
+      await s3.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: s3Key,
+        })
+      );
     }
 
-    // Delete the blog from MongoDB
+    // Delete blog from DB
     await blogmodel.findByIdAndDelete(_id);
 
-    return successResponse(
-      res,
-      "Blog and its cover image deleted successfully"
-    );
+    return successResponse(res, "blog and associated images deleted");
   } catch (error) {
     console.log("error", error);
     errorResponse(res, 500, "internal server error ");
@@ -195,35 +197,32 @@ async function publishedapprovalHandler(req, res) {
 }
 
 async function deletecoverimageHandler(req, res) {
-  const { imageurl, blogid } = req.body;
-  if (!imageurl || !blogid) {
-    return errorResponse(res, 400, "some params are missing");
-  }
-  const s3Key = imageurl.split(".amazonaws.com/")[1];
-  if (!s3Key) {
-    return errorResponse(res, 400, "invalid s3 url");
-  }
   try {
-    await s3
-      .deleteObject({ Bucket: process.env.AWS_S3_BUCKET, Key: s3Key })
-      .promise();
-    // 2. Remove from DB
-    const blog = await blogmodel.findById(blogid);
-    if (!blog) return errorResponse(res, 404, "blog not found");
-
-    if (
-      decodeURIComponent(blog.coverimage.trim()) ===
-      decodeURIComponent(imageurl.trim())
-    ) {
-      blog.coverimage = ""; // or null
+    const { _id } = req.body;
+    if (!_id) {
+      return errorResponse(res, 400, "Blog ID (_id) is required");
     }
 
+    const blog = await blogmodel.findById(_id);
+    if (!blog) {
+      return errorResponse(res, 404, "Blog not found");
+    }
+
+    const imageUrl = blog.coverimage;
+    const s3Key = imageUrl?.split(".amazonaws.com/")[1];
+
+    if (s3Key) {
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: s3Key,
+      });
+      await s3.send(deleteCommand);
+    }
+
+    blog.coverimage = ""; // Clear image reference from DB
     await blog.save();
 
-    // 3. Refetch updated document
-    const updated = await blogmodel.findById(blogid);
-
-    return successResponse(res, "Image deleted successfully", updated);
+    return successResponse(res, "Blog image deleted successfully", blog);
   } catch (error) {
     console.log("error", error);
     errorResponse(res, 500, "internal server error");
