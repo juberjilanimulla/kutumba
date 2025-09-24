@@ -5,10 +5,15 @@ import {
 } from "../../helpers/serverResponse.js";
 import imagemodel from "../../models/imagemodel.js";
 import admingalleryimageRouter from "./adminuploadimageRouter.js";
-import AWS from "aws-sdk";
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
-const s3 = new AWS.S3();
-
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 const adminimageRouter = Router();
 
 adminimageRouter.get("/", getallimageHandler);
@@ -56,13 +61,13 @@ async function deletegalleryimageHandler(req, res) {
       return errorResponse(res, 404, "Image URL not found in gallery");
     }
 
-    // 3. Delete image from S3
-    await s3
-      .deleteObject({
+    // AWS SDK v3 delete
+    await s3.send(
+      new DeleteObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET,
         Key: s3Key,
       })
-      .promise();
+    );
 
     // 4. Remove image from DB
     gallery.images = gallery.images.filter(
@@ -94,22 +99,20 @@ async function deletegalleryHandler(req, res) {
       return errorResponse(res, 404, "Gallery not found");
     }
 
-    // 2. Delete all associated images from S3
     if (Array.isArray(gallery.images) && gallery.images.length > 0) {
       for (const img of gallery.images) {
         const s3Key = img.url.split(".amazonaws.com/")[1];
         if (s3Key) {
-          await s3
-            .deleteObject({
+          await s3.send(
+            new DeleteObjectCommand({
               Bucket: process.env.AWS_S3_BUCKET,
               Key: s3Key,
             })
-            .promise();
+          );
         }
       }
     }
 
-    // 3. Delete the gallery document from MongoDB
     await imagemodel.findByIdAndDelete(_id);
 
     return successResponse(res, "Gallery and its images deleted successfully");
