@@ -97,6 +97,7 @@ async function createblogHandler(req, res) {
       keywords,
       content,
       published: true,
+      author,
     };
     const blog = await blogmodel.create(parmas);
     successResponse(res, "successfully updated", blog);
