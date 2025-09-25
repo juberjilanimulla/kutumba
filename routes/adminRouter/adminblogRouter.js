@@ -85,8 +85,15 @@ async function getallblogHandler(req, res) {
 
 async function createblogHandler(req, res) {
   try {
-    const { title, metatitle, metadescription, keywords, content, published } =
-      req.body;
+    const {
+      title,
+      metatitle,
+      metadescription,
+      keywords,
+      content,
+      published,
+      author,
+    } = req.body;
     if (!title || !metatitle || !metadescription || !keywords || !content) {
       return errorResponse(res, 400, "some params are missing");
     }
