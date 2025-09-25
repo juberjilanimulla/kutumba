@@ -17,7 +17,7 @@ const eventSchema = new Schema(
       },
     ],
   },
-  { timestamps: trusted, versionKey: false }
+  { timestamps: true, versionKey: false }
 );
 
 function currentLocalTimePlusOffset() {
