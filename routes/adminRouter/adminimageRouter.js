@@ -34,15 +34,10 @@ async function getallimageHandler(req, res) {
 }
 
 async function deletegalleryimageHandler(req, res) {
-  const { imageurl, galleryid } = req.body;
+  const { imageid, galleryid } = req.body;
 
-  if (!imageurl || !galleryid) {
-    return errorResponse(res, 400, "Missing image URL or gallery ID");
-  }
-
-  const s3Key = imageurl.split(".amazonaws.com/")[1];
-  if (!s3Key) {
-    return errorResponse(res, 400, "Invalid S3 URL");
+  if (!imageid || !galleryid) {
+    return errorResponse(res, 400, "Missing image ID or gallery ID");
   }
 
   try {
@@ -50,32 +45,27 @@ async function deletegalleryimageHandler(req, res) {
     const gallery = await imagemodel.findById(galleryid);
     if (!gallery) return errorResponse(res, 404, "Gallery not found");
 
-    // 2. Check if imageurl exists in gallery.images
-    const imageExists = gallery.images.some(
-      (img) =>
-        decodeURIComponent(img.url.trim()) ===
-        decodeURIComponent(imageurl.trim())
-    );
-
-    if (!imageExists) {
-      return errorResponse(res, 404, "Image URL not found in gallery");
+    // 2. Find the image by _id inside gallery.images
+    const imageDoc = gallery.images.id(imageid);
+    if (!imageDoc) {
+      return errorResponse(res, 404, "Image not found in gallery");
+    }
+    // 3. Extract S3 key from the image URL
+    const s3Key = imageDoc.url.split(".amazonaws.com/")[1];
+    if (!s3Key) {
+      return errorResponse(res, 400, "Invalid S3 URL stored in DB");
     }
 
-    // AWS SDK v3 delete
+    // 4. Delete from S3
     await s3.send(
       new DeleteObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET,
+        Bucket: process.env.AWS_BUCKET_NAME,
         Key: s3Key,
       })
     );
 
-    // 4. Remove image from DB
-    gallery.images = gallery.images.filter(
-      (img) =>
-        decodeURIComponent(img.url.trim()) !==
-        decodeURIComponent(imageurl.trim())
-    );
-
+    // 5. Remove image from gallery.images
+    imageDoc.deleteOne(); // mongoose subdoc method
     await gallery.save();
 
     return successResponse(res, "Image deleted successfully");
@@ -105,7 +95,7 @@ async function deletegalleryHandler(req, res) {
         if (s3Key) {
           await s3.send(
             new DeleteObjectCommand({
-              Bucket: process.env.AWS_S3_BUCKET,
+              Bucket: process.env.AWS_BUCKET_NAME,
               Key: s3Key,
             })
           );
