@@ -4,6 +4,7 @@ import usercontactRouter from "./usercontactRouter.js";
 import usergalleryRouter from "./usergalleryRouter.js";
 import usercommentRouter from "./usercommentRouter.js";
 import userclientRouter from "./userclientRouter.js";
+import usereventRouter from "./usereventRouter.js";
 
 const userRouter = Router();
 
@@ -12,4 +13,6 @@ userRouter.use("/contact", usercontactRouter);
 userRouter.use("/gallery", usergalleryRouter);
 userRouter.use("/comment", usercommentRouter);
 userRouter.use("/client", userclientRouter);
+userRouter.use("/event", usereventRouter);
+
 export default userRouter;
