@@ -6,6 +6,7 @@ import usercommentRouter from "./usercommentRouter.js";
 import userclientRouter from "./userclientRouter.js";
 import usereventRouter from "./usereventRouter.js";
 import userfunctionRouter from "./userfunctionRouter.js";
+import userprivacypolicyRouter from "./userprivacypolicyRouter.js";
 
 const userRouter = Router();
 
@@ -16,5 +17,6 @@ userRouter.use("/comment", usercommentRouter);
 userRouter.use("/client", userclientRouter);
 userRouter.use("/event", usereventRouter);
 userRouter.use("/function", userfunctionRouter);
+userRouter.use("/privacypolicy", userprivacypolicyRouter);
 
 export default userRouter;
