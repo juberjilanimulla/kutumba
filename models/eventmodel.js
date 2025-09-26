@@ -1,15 +1,16 @@
 import mongoose, { model, Schema } from "mongoose";
 
+const subCategorySchema = new Schema(
+  {
+    name: { type: String }, // e.g. Engagement, Haldi
+  },
+  { timestamps: true, versionKey: false }
+);
+
 const eventSchema = new Schema(
   {
-    clientid: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "client",
-    },
-    eventtype: {
-      type: String,
-      enum: ["Wedding", "Corporate", "Private"],
-    },
+    category: { type: String, required: true }, // e.g. Wedding, Corporate Events, Private Parties
+    subcategories: [subCategorySchema], // Embedded documents
   },
   { timestamps: true, versionKey: false }
 );
