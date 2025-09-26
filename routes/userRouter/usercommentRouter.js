@@ -35,7 +35,7 @@ async function createcommentHandler(req, res) {
 
 async function getcommentHandler(req, res) {
   try {
-    const comment = await commentmodel.find({ published: true });
+    const comment = await commentmodel.find({ approved: true });
     successResponse(res, "success", comment);
   } catch (error) {
     console.log("error", error);
