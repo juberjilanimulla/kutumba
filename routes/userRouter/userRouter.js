@@ -7,6 +7,7 @@ import userclientRouter from "./userclientRouter.js";
 import usereventRouter from "./usereventRouter.js";
 import userfunctionRouter from "./userfunctionRouter.js";
 import userprivacypolicyRouter from "./userprivacypolicyRouter.js";
+import usertermandconditionRouter from "./usertermsandconditionRouter.js";
 
 const userRouter = Router();
 
@@ -18,5 +19,6 @@ userRouter.use("/client", userclientRouter);
 userRouter.use("/event", usereventRouter);
 userRouter.use("/function", userfunctionRouter);
 userRouter.use("/privacypolicy", userprivacypolicyRouter);
+userRouter.use("/termsandcondition", usertermandconditionRouter);
 
 export default userRouter;
