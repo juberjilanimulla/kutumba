@@ -1,11 +1,8 @@
 import mongoose, { model, Schema } from "mongoose";
 
-const subCategorySchema = new Schema(
-  {
-    name: { type: String }, // e.g. Engagement, Haldi
-  },
-  { timestamps: true, versionKey: false }
-);
+const subCategorySchema = new Schema({
+  name: { type: String }, // e.g. Engagement, Haldi
+});
 
 const eventSchema = new Schema(
   {
