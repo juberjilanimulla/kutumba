@@ -7,7 +7,7 @@ import {
 
 const userfunctionRouter = Router();
 
-userfunctionRouter.create("/post", createfunctionHandler);
+userfunctionRouter.post("/create", createfunctionHandler);
 
 export default userfunctionRouter;
 

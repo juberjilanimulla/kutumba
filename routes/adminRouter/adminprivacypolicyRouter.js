@@ -1,7 +1,9 @@
 import { Router } from "express";
-import privacypolicymodel from "../../model/privacypolicymodel.js";
-import { successResponse, errorResponse } from "../../helper/serverResponse.js";
-
+import privacypolicymodel from "../../models/privacypolicymodel.js";
+import {
+  successResponse,
+  errorResponse,
+} from "../../helpers/serverResponse.js";
 const adminprivacypolicyRouter = Router();
 
 adminprivacypolicyRouter.get("/", getprivacypolicyHandler);

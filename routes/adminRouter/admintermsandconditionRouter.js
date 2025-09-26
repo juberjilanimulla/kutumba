@@ -1,6 +1,9 @@
 import { Router } from "express";
-import { errorResponse, successResponse } from "../../helper/serverResponse.js";
-import termandconditionmodel from "../../model/termsandconditionmodel.js";
+import {
+  errorResponse,
+  successResponse,
+} from "../../helpers/serverResponse.js";
+import termandconditionmodel from "../../models/termsandconditionmodel.js";
 import mongoose from "mongoose";
 
 const admintermsandconditionRouter = Router();

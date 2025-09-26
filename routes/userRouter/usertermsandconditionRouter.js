@@ -1,7 +1,9 @@
 import { Router } from "express";
-import { successResponse, errorResponse } from "../../helper/serverResponse.js";
-import termandconditionmodel from "../../model/termsandconditionmodel.js";
-
+import {
+  successResponse,
+  errorResponse,
+} from "../../helpers/serverResponse.js";
+import termandconditionmodel from "../../models/termsandconditionmodel.js";
 const usertermandconditionRouter = Router();
 
 usertermandconditionRouter.get("/", gettermsandconditionHandler);
