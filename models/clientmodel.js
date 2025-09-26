@@ -11,7 +11,17 @@ const clientSchema = new Schema(
     altphone: String,
     email: String,
     notes: String,
+    categoryid: {
+      type: Schema.Types.ObjectId,
+      ref: "event", // refers to category in event master
+      required: true,
+    },
+    subcategoryid: {
+      type: Schema.Types.ObjectId,
+      required: true, // refers to subcategory inside that category
+    },
   },
+
   { timestamps: true, versionKey: false }
 );
 

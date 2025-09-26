@@ -13,9 +13,42 @@ export default userclientRouter;
 
 async function createclientHandler(req, res) {
   try {
-    const { name, location, phone, altphone, email, notes } = req.body;
-    if (!name || !location || !phone || !altphone || !email || !notes) {
+    const {
+      name,
+      location,
+      phone,
+      altphone,
+      email,
+      notes,
+      categoryid,
+      subcategoryid,
+    } = req.body;
+    if (
+      !name ||
+      !location ||
+      !phone ||
+      !altphone ||
+      !email ||
+      !notes ||
+      !categoryid ||
+      !subcategoryid
+    ) {
       return errorResponse(res, 400, "some params are missing");
+    }
+    const requiredFields = {
+      name,
+      location,
+      phone,
+      altphone,
+      email,
+      notes,
+      categoryid,
+      subcategoryid,
+    };
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (!value) {
+        return errorResponse(res, 400, `${key} is missing`);
+      }
     }
     const params = {
       name,
@@ -24,6 +57,8 @@ async function createclientHandler(req, res) {
       altphone,
       email,
       notes,
+      categoryid,
+      subcategoryid,
     };
     const client = await clientmodel.create(params);
     successResponse(res, "success", client);
