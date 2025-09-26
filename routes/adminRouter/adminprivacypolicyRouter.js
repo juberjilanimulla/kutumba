@@ -4,6 +4,8 @@ import {
   successResponse,
   errorResponse,
 } from "../../helpers/serverResponse.js";
+import mongoose from "mongoose";
+
 const adminprivacypolicyRouter = Router();
 
 adminprivacypolicyRouter.get("/", getprivacypolicyHandler);
