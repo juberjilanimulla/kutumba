@@ -22,8 +22,8 @@ const functionSchema = new Schema(
           type: String, // Photography, Lights, Music, Priest, etc.
         },
         option: String, // selected option (e.g. Premium Photography Package)
-        startTime: String,
-        endTime: String,
+        starttime: String,
+        endtime: String,
         location: String,
         members: String,
         quantity: Number,
