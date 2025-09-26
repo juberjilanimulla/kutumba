@@ -11,6 +11,7 @@ const clientSchema = new Schema(
     altphone: String,
     email: String,
     notes: String,
+    selectfunction: String,
   },
   { timestamps: true, versionKey: false }
 );

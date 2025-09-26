@@ -10,7 +10,7 @@ const eventSchema = new Schema(
       type: String,
       enum: ["Wedding", "Corporate", "Private"],
     },
-    function: [
+    functionid: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "function",
