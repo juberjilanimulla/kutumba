@@ -4,6 +4,7 @@ import {
   successResponse,
   errorResponse,
 } from "../../helpers/serverResponse.js";
+import eventmodel from "../../models/eventmodel.js";
 
 const userfunctionRouter = Router();
 
