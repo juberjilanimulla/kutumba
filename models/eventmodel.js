@@ -10,12 +10,6 @@ const eventSchema = new Schema(
       type: String,
       enum: ["Wedding", "Corporate", "Private"],
     },
-    functionid: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "function",
-      },
-    ],
   },
   { timestamps: true, versionKey: false }
 );

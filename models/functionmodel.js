@@ -6,6 +6,10 @@ const functionSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "event",
     },
+    clientid: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "client",
+    },
     functionname: { type: String }, // e.g. "Engagement", "Conference"
     date: Date,
     location: String,
