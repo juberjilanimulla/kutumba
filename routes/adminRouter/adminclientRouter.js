@@ -9,6 +9,7 @@ const adminclientRouter = Router();
 
 adminclientRouter.post("/", getallclientHnadler);
 adminclientRouter.delete("/delete", deleteclientHandler);
+adminclientRouter.put("/update", updateclientHandler);
 
 export default adminclientRouter;
 
@@ -49,17 +50,34 @@ async function getallclientHnadler(req, res) {
         : { createdAt: -1 };
 
     // Fetch paginated blogs
-    const client = await clientmodel
+    const clients = await clientmodel
       .find(query)
+      .populate("categoryid", "category subcategories")
       .sort(sortBy)
       .skip(skip)
       .limit(limit);
+
+    const clientWithSub = clients.map((c) => {
+      // Find the matching subcategory
+      const sub = c.categoryid?.subcategories?.find(
+        (s) => s._id.toString() === c.subcategoryid?.toString()
+      );
+
+      return {
+        ...c.toObject(),
+        categoryid: {
+          _id: c.categoryid._id,
+          category: c.categoryid.category,
+        },
+        subcategory: sub ? { _id: sub._id, name: sub.name } : null,
+      };
+    });
 
     const totalCount = await clientmodel.countDocuments(query);
     const totalPages = Math.ceil(totalCount / limit);
 
     successResponse(res, "successfully", {
-      client,
+      client: clientWithSub,
       totalPages,
     });
   } catch (error) {
@@ -80,6 +98,35 @@ async function deleteclientHandler(req, res) {
     }
     const client = await clientmodel.findByIdAndDelete({ _id: _id });
     successResponse(res, "success");
+  } catch (error) {
+    console.log("error", error);
+    errorResponse(res, 500, "internal server error");
+  }
+}
+
+async function updateclientHandler(req, res) {
+  try {
+    const { _id, ...updatedData } = req.body;
+    const options = { new: true };
+    if (
+      !updatedData.name ||
+      !updatedData.location ||
+      !updatedData.phone ||
+      !updatedData.altphone ||
+      !updatedData.email ||
+      !updatedData.notes ||
+      !updatedData.categoryid ||
+      !updatedData.subcategoryid
+    ) {
+      errorResponse(res, 404, "Some params are missing");
+      return;
+    }
+    const client = await clientmodel.findByIdAndUpdate(
+      _id,
+      updatedData,
+      options
+    );
+    successResponse(res, "successfully updated", client);
   } catch (error) {
     console.log("error", error);
     errorResponse(res, 500, "internal server error");
