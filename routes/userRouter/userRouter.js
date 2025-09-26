@@ -5,6 +5,7 @@ import usergalleryRouter from "./usergalleryRouter.js";
 import usercommentRouter from "./usercommentRouter.js";
 import userclientRouter from "./userclientRouter.js";
 import usereventRouter from "./usereventRouter.js";
+import userfunctionRouter from "./userfunctionRouter.js";
 
 const userRouter = Router();
 
@@ -14,5 +15,6 @@ userRouter.use("/gallery", usergalleryRouter);
 userRouter.use("/comment", usercommentRouter);
 userRouter.use("/client", userclientRouter);
 userRouter.use("/event", usereventRouter);
+userRouter.use("/function", userfunctionRouter);
 
 export default userRouter;

@@ -27,6 +27,10 @@ async function deletecontactRouter(req, res) {
     if (!_id) {
       return errorResponse(res, 400, "some params are missing");
     }
+    const existcontact = await contactmodel.findById({ _id: _id });
+    if (!existcontact) {
+      return errorResponse(res, 404, "contact detail not found");
+    }
     const contact = await contactmodel.findByIdAndDelete({ _id });
     successResponse(res, "success");
   } catch (error) {
