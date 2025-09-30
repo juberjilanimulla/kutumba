@@ -18,7 +18,7 @@ const clientSchema = new Schema(
     },
     subcategoryid: {
       type: Schema.Types.ObjectId,
-      required: true, // refers to subcategory inside that category
+      
     },
   },
 

@@ -1,4 +1,4 @@
-import mongoose, { model, Schema } from "mongoose";
+import { model, Schema } from "mongoose";
 
 const subCategorySchema = new Schema({
   name: { type: String }, // e.g. Engagement, Haldi

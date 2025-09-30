@@ -55,38 +55,6 @@ adminblogimageRouter.post("/:id", (req, res) => {
     if (!req.file) return errorResponse(res, 400, "No file uploaded");
 
     try {
-      // const blog = await blogmodel.findById(req.params.id);
-      // if (!blog) {
-      //   fs.unlinkSync(req.file.path);
-      //   return errorResponse(res, 404, "Blog not found");
-      // }
-      //
-      // const fileContent = fs.readFileSync(req.file.path);
-      // const fileName = `${req.params.id}-${Date.now()}${path.extname(
-      //   req.file.originalname
-      // )}`;
-      // const s3Key = `blog/${fileName}`;
-
-      // const s3Res = await s3
-      //   .upload({
-      //     Bucket: process.env.AWS_S3_BUCKET,
-      //     Key: s3Key,
-      //     Body: fileContent,
-      //     ContentType: req.file.mimetype,
-      //   })
-      //   .promise();
-
-      // // If blog.coverimage is an array
-      // //   blog.coverimage.push(s3Res.Location);
-
-      // // If blog.coverimage is a single string
-      // blog.coverimage = s3Res.Location;
-
-      // fs.unlinkSync(req.file.path);
-      // await blog.save();
-
-      // return successResponse(res, "Image uploaded successfully", blog);
-
       const blog = await blogmodel.findById(req.params.id);
       if (!blog) {
         fs.unlinkSync(req.file.path);

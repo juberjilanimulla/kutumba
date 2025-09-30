@@ -5,7 +5,8 @@ import {
 } from "../../helpers/serverResponse.js";
 import contactmodel from "../../models/contactmodel.js";
 
-const admincontactRouter = Router();
+const admincontactRouter = Router(); 
+
 admincontactRouter.get("/", getallcontactRouter);
 admincontactRouter.delete("/delete", deletecontactRouter);
 
