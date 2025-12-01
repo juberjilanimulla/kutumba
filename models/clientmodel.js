@@ -13,12 +13,11 @@ const clientSchema = new Schema(
     notes: String,
     categoryid: {
       type: Schema.Types.ObjectId,
-      ref: "event", // refers to category in event master
-      required: true,
+      ref: "event",
     },
     subcategoryid: {
       type: Schema.Types.ObjectId,
-      
+      ref: "event",
     },
   },
 

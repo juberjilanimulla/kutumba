@@ -45,7 +45,7 @@ async function createclientHandler(req, res) {
     }
 
     // Validate subcategory (inside the category)
-    const existSubcategory = existCategory.subcategories.id(subcategoryid);
+    const existSubcategory = existCategory.subcategory.id(subcategoryid);
     if (!existSubcategory) {
       return errorResponse(res, 404, "subcategory not found");
     }

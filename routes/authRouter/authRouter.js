@@ -5,6 +5,7 @@ import {
 } from "../../helpers/serverResponse.js";
 import usermodel from "../../models/usermodel.js";
 import {
+  bcryptPassword,
   comparePassword,
   generateAccessToken,
 } from "../../helpers/helperFunction.js";
@@ -14,8 +15,6 @@ const authRouter = Router();
 export default authRouter;
 
 authRouter.post("/signin", signinHandler);
-authRouter.post("/forgotpassword", forgotpasswordHandler);
-authRouter.post("/resetpassword", resetpasswordHandler);
 authRouter.post("/signup", signupHandler);
 
 async function signinHandler(req, res) {
@@ -53,24 +52,26 @@ async function signinHandler(req, res) {
   }
 }
 
-async function forgotpasswordHandler(req, res) {
-  try {
-  } catch (error) {
-    console.log("error", error);
-    errorResponse(res, 500, "internal server error");
-  }
-}
-
-async function resetpasswordHandler(req, res) {
-  try {
-  } catch (error) {
-    console.log("error", error);
-    errorResponse(res, 500, "internal server error");
-  }
-}
-
 async function signupHandler(req, res) {
   try {
+    const { firstname, lastname, email, mobile, password } = req.body;
+    if (!firstname || !lastname || !email || !mobile || !password) {
+      return errorResponse(res, 400, "some params are missing");
+    }
+    const existingUser = await usermodel.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+    const hashedPassword = bcryptPassword(password);
+
+    const user = await usermodel.create({
+      firstname,
+      lastname,
+      email,
+      mobile,
+      password: hashedPassword,
+    });
+    successResponse(res, "signup successfully", user);
   } catch (error) {
     console.log("error", error);
     errorResponse(res, 500, "internal server error");
