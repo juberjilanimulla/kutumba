@@ -16,10 +16,11 @@ const clientSchema = new Schema(
     notes: String,
     categoryid: {
       type: Schema.Types.ObjectId,
-      ref: "event",
+      ref: "category",
     },
     subcategoryid: {
       type: Schema.Types.ObjectId,
+      ref: "subcategory",
     },
   },
 

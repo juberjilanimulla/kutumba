@@ -5,12 +5,12 @@ import {
 } from "../../helpers/serverResponse.js";
 import eventmodel from "../../models/eventmodel.js";
 
-const usereventRouter = Router();
+const usercategeoryRouter = Router();
 
-usereventRouter.get("/category", getallcategoryHandler);
-usereventRouter.post("/subcategories", getallsubcategoryHandler);
+usercategeoryRouter.get("/category", getallcategoryHandler);
+usercategeoryRouter.post("/subcategories", getallsubcategoryHandler);
 
-export default usereventRouter;
+export default usercategeoryRouter;
 
 async function getallcategoryHandler(req, res) {
   try {
