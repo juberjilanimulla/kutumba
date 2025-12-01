@@ -8,6 +8,7 @@ import userfunctionRouter from "./userfunctionRouter.js";
 import userprivacypolicyRouter from "./userprivacypolicyRouter.js";
 import usertermandconditionRouter from "./usertermsandconditionRouter.js";
 import usercategeoryRouter from "./usercategoryRouter.js";
+import usersubcategoryRouter from "./usersubcategoryRouter.js";
 
 const userRouter = Router();
 
@@ -20,5 +21,5 @@ userRouter.use("/category", usercategeoryRouter);
 userRouter.use("/function", userfunctionRouter);
 userRouter.use("/privacypolicy", userprivacypolicyRouter);
 userRouter.use("/termsandcondition", usertermandconditionRouter);
-
+userRouter.use("/subcategory", usersubcategoryRouter);
 export default userRouter;
