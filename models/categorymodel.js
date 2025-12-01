@@ -1,13 +1,8 @@
-import { model, Schema } from "mongoose";
+import { Schema, model } from "mongoose";
 
-const subCategorySchema = new Schema({
-  name: { type: String },
-});
-
-const eventSchema = new Schema(
+const categorySchema = new Schema(
   {
-    category: { type: String, required: true },
-    subcategories: [subCategorySchema],
+    name: String,
   },
   { timestamps: true, versionKey: false }
 );
@@ -17,19 +12,18 @@ function currentLocalTimePlusOffset() {
   const offset = 5.5 * 60 * 60 * 1000;
   return new Date(now.getTime() + offset);
 }
-
-eventSchema.pre("save", function (next) {
+categorySchema.pre("save", function (next) {
   const currentTime = currentLocalTimePlusOffset();
   this.createdAt = currentTime;
   this.updatedAt = currentTime;
   next();
 });
 
-eventSchema.pre("findOneAndUpdate", function (next) {
+categorySchema.pre("findOneAndUpdate", function (next) {
   const currentTime = currentLocalTimePlusOffset();
   this.set({ updatedAt: currentTime });
   next();
 });
 
-const eventmodel = model("event", eventSchema);
-export default eventmodel;
+const categorymodel = model("category", categorySchema);
+export default categorymodel;

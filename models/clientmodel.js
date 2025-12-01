@@ -8,7 +8,10 @@ const clientSchema = new Schema(
       type: String,
       required: true,
     },
-    altphone: String,
+    altphone: {
+      type: String,
+      default: "",
+    },
     email: String,
     notes: String,
     categoryid: {
@@ -17,7 +20,6 @@ const clientSchema = new Schema(
     },
     subcategoryid: {
       type: Schema.Types.ObjectId,
-      ref: "event",
     },
   },
 
